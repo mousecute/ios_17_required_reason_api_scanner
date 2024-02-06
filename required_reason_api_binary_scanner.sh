@@ -64,6 +64,8 @@ search_binaries_with_directory app
 search_binaries_with_directory framework
 # Adds the static libs .a binaries
 search_binaries_with_filename a
+# Adds the static libs .so binaries
+search_binaries_with_filename so
 
 echo "Analyzing binaries: ${binaries[@]}"
 echo '---'
@@ -71,7 +73,7 @@ echo '---'
 for binary in "${binaries[@]}"; do
     if ! [ -f $binary ]; then
         echo "binary '$binary' doesn't exist"
-        exit 1
+        # exit 1
     fi
     used_symbols=()
     for symbol in "${symbols[@]}"; do

@@ -5,7 +5,7 @@ excluded_dirs=() # e.g. ("Pods" "3rdparty")
 
 # Global variable for search strings that may indicate a use of "iOS required reason API"
 # taken from here: https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api
-search_string=(#"creationDate" 
+search_string_swift=(#"creationDate" 
                ".modificationDate" 
                ".fileModificationDate" 
                ".contentModificationDateKey" 
@@ -34,13 +34,98 @@ search_string=(#"creationDate"
                "activeInputModes"
                "UserDefaults"
                )
+search_string_objcpp=(#"creationDate"
+                "NSFileCreationDate"
+                "NSFileModificationDate"
+                "fileModificationDate"
+                "NSURLContentModificationDateKey"
+                "NSURLCreationDateKey"
+                "getattrlist"
+                "getattrlistbulk"
+                "getattrlistbulk"
+                "stat("
+                "fstat("
+                "fstatat("
+                "lstat("
+                "getattrlistat"
+                "systemUptime"
+                "mach_absolute_time"
+                "NSURLVolumeAvailableCapacityKey"
+                "NSURLVolumeAvailableCapacityForImportantUsageKey"
+                "NSURLVolumeAvailableCapacityForOpportunisticUsageKey"
+                "NSURLVolumeTotalCapacityKey"
+                "NSFileSystemFreeSize"
+                "NSFileSystemSize"
+                "statfs"
+                "statvfs"
+                "fstatfs"
+                "fstatvfs"
+                "getattrlist"
+                "fgetattrlist"
+                "getattrlistat"
+                "activeInputModes"
+                "NSUserDefaults"
+               )
+search_string_cpp=(#"creationDate"
+                "fileModificationDate"
+                "getattrlist"
+                "getattrlistbulk"
+                "getattrlistbulk"
+                "stat("
+                "fstat("
+                "fstatat("
+                "lstat("
+                "getattrlistat"
+                "systemUptime"
+                "mach_absolute_time"
+                "statfs"
+                "statvfs"
+                "fstatfs"
+                "fstatvfs"
+                "getattrlist"
+                "fgetattrlist"
+                "getattrlistat"
+                "activeInputModes"
+               )
 
 # Function to search for equired reason API strings in a Swift files
 search_in_swift_file() {
     local file="$1"
 
     # Loop through each search string
-    for string in "${search_string[@]}"; do
+    for string in "${search_string_swift[@]}"; do
+        # Search for the string in the file and get the line numbers
+        lines=$(grep -n "$string" "$file" | cut -d ":" -f 1)
+        if [ -n "$lines" ]; then
+            echo "Found potentially required reason API usage '$string' in '$file'"
+            one_line_string=$(echo "$lines" | tr '\n' ' ')
+            echo "Line numbers: $one_line_string"
+        fi
+    done
+}
+
+# Function to search for equired reason API strings in a ObjC(++) files
+search_in_objc_file() {
+    local file="$1"
+
+    # Loop through each search string
+    for string in "${search_string_objcpp[@]}"; do
+        # Search for the string in the file and get the line numbers
+        lines=$(grep -n "$string" "$file" | cut -d ":" -f 1)
+        if [ -n "$lines" ]; then
+            echo "Found potentially required reason API usage '$string' in '$file'"
+            one_line_string=$(echo "$lines" | tr '\n' ' ')
+            echo "Line numbers: $one_line_string"
+        fi
+    done
+}
+
+# Function to search for equired reason API strings in a Cpp files
+search_in_cpp_file() {
+    local file="$1"
+
+    # Loop through each search string
+    for string in "${search_string_cpp[@]}"; do
         # Search for the string in the file and get the line numbers
         lines=$(grep -n "$string" "$file" | cut -d ":" -f 1)
         if [ -n "$lines" ]; then
@@ -83,6 +168,12 @@ traverse_and_search() {
         elif [ -f "$item" ] && [[ "$item" == *.swift ]]; then
             # If it's a file with .swift extension, search for the strings
             search_in_swift_file "$item"
+        elif [ -f "$item" ] && ([[ "$item" == *.mm ]] || [[ "$item" == *.m ]]); then
+            # If it's a file with .swift extension, search for the strings
+            search_in_objc_file "$item"
+        elif [ -f "$item" ] && ([[ "$item" == *.cpp ]] || [[ "$item" == *.c ]] || [[ "$item" == *.h ]]); then
+            # If it's a file with .swift extension, search for the strings
+            search_in_cpp_file "$item"
         fi
     done
 }
